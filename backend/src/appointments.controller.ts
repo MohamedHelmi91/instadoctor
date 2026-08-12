@@ -1,0 +1,6 @@
+import {BadRequestException,Body,Controller,Get,Param,Patch,Post,Query} from '@nestjs/common';
+import {PrismaService} from './prisma.service';
+@Controller('appointments') export class AppointmentsController{constructor(private prisma:PrismaService){}
+@Post() async create(@Body() b:any){const at=new Date(b.appointmentAt);if(Number.isNaN(at.getTime()))throw new BadRequestException('Invalid appointment date');const conflict=await this.prisma.appointment.findFirst({where:{doctorId:b.doctorId,appointmentAt:at,status:{not:'CANCELLED'}}});if(conflict)throw new BadRequestException('Slot already booked');return this.prisma.appointment.create({data:{patientId:b.patientId,doctorId:b.doctorId,appointmentAt:at,notes:b.notes},include:{doctor:{include:{user:{select:{name:true}}}}}})}
+@Get('me') list(@Query('patientId') patientId?:string,@Query('doctorId') doctorId?:string){return this.prisma.appointment.findMany({where:{...(patientId?{patientId}:{}),...(doctorId?{doctorId}:{})},include:{doctor:{include:{user:{select:{name:true}}}},patient:{select:{id:true,name:true,email:true}}},orderBy:{appointmentAt:'asc'}})}
+@Patch(':id/status') status(@Param('id') id:string,@Body() b:any){return this.prisma.appointment.update({where:{id},data:{status:b.status}})} }
