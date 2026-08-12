@@ -1,0 +1,65 @@
+generator client { provider = "prisma-client-js" }
+
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+
+enum Role { PATIENT DOCTOR ADMIN }
+enum AppointmentStatus { PENDING CONFIRMED CANCELLED COMPLETED }
+
+model User {
+  id String @id @default(cuid())
+  name String
+  email String @unique
+  phone String? @unique
+  passwordHash String
+  role Role @default(PATIENT)
+  patient Patient?
+  doctor Doctor?
+  appointments Appointment[] @relation("PatientAppointments")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model Patient {
+  id String @id @default(cuid())
+  userId String @unique
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  birthDate DateTime?
+  gender String?
+  address String?
+}
+model Doctor {
+  id String @id @default(cuid())
+  userId String @unique
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  specialty String
+  bio String?
+  licenseNumber String?
+  consultationFee Float @default(0)
+  verified Boolean @default(false)
+  rating Float @default(0)
+  availability Availability[]
+  appointments Appointment[] @relation("DoctorAppointments")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model Availability {
+  id String @id @default(cuid())
+  doctorId String
+  doctor Doctor @relation(fields:[doctorId],references:[id],onDelete:Cascade)
+  dayOfWeek Int
+  startTime String
+  endTime String
+}
+model Appointment {
+  id String @id @default(cuid())
+  patientId String
+  doctorId String
+  patient User @relation("PatientAppointments",fields:[patientId],references:[id],onDelete:Cascade)
+  doctor Doctor @relation("DoctorAppointments",fields:[doctorId],references:[id],onDelete:Cascade)
+  appointmentAt DateTime
+  status AppointmentStatus @default(PENDING)
+  paymentStatus String @default("UNPAID")
+  notes String?
+  createdAt DateTime @default(now())
+  @@index([doctorId,appointmentAt])
+  @@index([patientId,appointmentAt])
+}
