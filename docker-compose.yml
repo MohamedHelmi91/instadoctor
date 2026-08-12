@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: instadoctor-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: instadoctor
+    ports:
+      - "5432:5432"
+    volumes:
+      - instadoctor_pgdata:/var/lib/postgresql/data
+
+volumes:
+  instadoctor_pgdata:
